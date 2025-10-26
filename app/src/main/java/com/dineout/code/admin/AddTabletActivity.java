@@ -4,8 +4,8 @@ import com.dineout.R;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.v7.app.AppCompatActivity;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
@@ -25,10 +25,9 @@ import java.util.List;
 public class AddTabletActivity extends AppCompatActivity {
 
     private Spinner spinner1;
-    EditText txtTabletID;
     Spinner spnStatus;
-    static ArrayList<Long> eid = new ArrayList<Long>();
-    ArrayList<Tablet> t = new ArrayList<Tablet>();
+    static ArrayList<Long> eid = new ArrayList<>();
+    ArrayList<Tablet> t = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,118 +36,104 @@ public class AddTabletActivity extends AppCompatActivity {
         addItemsOnSpinner();
     }
 
+    // Populate the spinner with status options
     public void addItemsOnSpinner() {
-
-        spinner1 = (Spinner) findViewById(R.id.TabletStatusDropDown300);
-        List<String> list = new ArrayList<String>();
+        spinner1 = findViewById(R.id.TabletStatusDropDown300);
+        List<String> list = new ArrayList<>();
         list.add("In Use");
         list.add("Not Use");
         list.add("Not Working");
         list.add("Broken");
-        ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this,
-                android.R.layout.simple_spinner_item, list);
+
+        ArrayAdapter<String> dataAdapter = new ArrayAdapter<>(
+                this, android.R.layout.simple_spinner_item, list
+        );
         dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinner1.setAdapter(dataAdapter);
     }
 
     public void btnBlick(View v) {
-
-        spnStatus = (Spinner) findViewById(R.id.TabletStatusDropDown300);
-
+        spnStatus = findViewById(R.id.TabletStatusDropDown300);
 
         DatabaseReference mDatabase1 = FirebaseDatabase.getInstance().getReference();
         mDatabase1.child("Ids").addChildEventListener(new ChildEventListener() {
             @Override
-            public void onChildAdded(DataSnapshot dataSnapshot, String prevChildKey) {
-                if (dataSnapshot != null) {
-
-                    if (dataSnapshot != null) {
-                        Toast.makeText(AddTabletActivity.this, "IDZ=" + String.valueOf(dataSnapshot.getValue(Long.class)), Toast.LENGTH_SHORT).show();
-
-                        eid.add(dataSnapshot.getValue(Long.class));
-
+            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, String prevChildKey) {
+                if (dataSnapshot.exists()) {
+                    Long value = dataSnapshot.getValue(Long.class);
+                    if (value != null) {
+                        Toast.makeText(AddTabletActivity.this,
+                                "IDZ = " + value, Toast.LENGTH_SHORT).show();
+                        eid.add(value);
                     }
                 }
-
-                //    Toast.makeText(AddTableActivity.this, "Value of it  "+ eid.get(1), Toast.LENGTH_SHORT).show();
-
             }
 
             @Override
-            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
-
-            }
-
+            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, String s) {}
             @Override
-            public void onChildRemoved(DataSnapshot dataSnapshot) {
-
-            }
-
+            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {}
             @Override
-            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
-
-            }
-
+            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, String s) {}
             @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-
-
+            public void onCancelled(@NonNull DatabaseError databaseError) {}
         });
+
         DatabaseReference ref1 = FirebaseDatabase.getInstance().getReference();
         if (t.size() == 0) {
-
             ref1.child("Ids").child("Tabletid").setValue(1);
         }
 
-
         DatabaseReference mDatabase = FirebaseDatabase.getInstance().getReference();
         mDatabase.child("Tablet").addListenerForSingleValueEvent(new ValueEventListener() {
-            public void onDataChange(DataSnapshot dataSnapshot) {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if (!eid.isEmpty()) {
+                    long nextId = eid.get(eid.size() - 1); // safer than hardcoded eid.get(2)
+                    Tablet tablet = new Tablet(
+                            String.valueOf(nextId),
+                            spnStatus.getSelectedItem().toString()
+                    );
 
-                Tablet table = new Tablet(String.valueOf(eid.get(2)), spnStatus.getSelectedItem().toString());
-                DatabaseReference ref = FirebaseDatabase.getInstance().getReference();
-                ref.child("Tablet").child(String.valueOf(eid.get(2))).setValue(table);
-                ref.child("Ids").child("Tabletid").setValue(eid.get(2) + 1);
-                Toast.makeText(AddTabletActivity.this, "Tablet has been added successfully", Toast.LENGTH_SHORT).show();
-                Intent it = new Intent(AddTabletActivity.this, AdminPanelActivity.class);
-                eid.clear();
-                startActivity(it);
+                    DatabaseReference ref = FirebaseDatabase.getInstance().getReference();
+                    ref.child("Tablet").child(String.valueOf(nextId)).setValue(tablet);
+                    ref.child("Ids").child("Tabletid").setValue(nextId + 1);
 
+                    Toast.makeText(AddTabletActivity.this,
+                            "Tablet has been added successfully",
+                            Toast.LENGTH_SHORT).show();
 
+                    Intent it = new Intent(AddTabletActivity.this, AdminPanelActivity.class);
+                    eid.clear();
+                    startActivity(it);
+                } else {
+                    Toast.makeText(AddTabletActivity.this,
+                            "No Tablet ID found in Firebase.",
+                            Toast.LENGTH_SHORT).show();
+                }
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-
-
+            public void onCancelled(@NonNull DatabaseError databaseError) {}
         });
 
         mDatabase.child("Tablet").addChildEventListener(new ChildEventListener() {
-            public void onChildAdded(DataSnapshot dataSnapshot, String previousKey) {
+            @Override
+            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, String previousKey) {
                 Tablet item = dataSnapshot.getValue(Tablet.class);
-                t.add(item);
-
-            }
-
-            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
-            }
-
-            public void onChildRemoved(DataSnapshot dataSnapshot) {
-            }
-
-            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+                if (item != null) {
+                    t.add(item);
+                }
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
+            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, String s) {}
+            @Override
+            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {}
+            @Override
+            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, String s) {}
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {}
         });
-
     }
 }
-

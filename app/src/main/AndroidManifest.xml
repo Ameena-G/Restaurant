@@ -25,6 +25,7 @@
             android:label="Login" />
         <activity
             android:name=".code.admin.HomeActivity"
+            android:exported="true"
             android:label="Order Up">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

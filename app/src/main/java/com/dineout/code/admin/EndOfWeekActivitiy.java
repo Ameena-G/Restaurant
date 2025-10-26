@@ -1,36 +1,37 @@
 package com.dineout.code.admin;
 
-import com.dineout.R;
-
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatActivity; // ✅ Updated import
 import android.view.View;
 import android.widget.Spinner;
 import android.widget.Toast;
 
+import com.dineout.R;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
-
-/*spinen to select end of week day*/
+/**
+ * Activity to select and set the end-of-week day.
+ */
 public class EndOfWeekActivitiy extends AppCompatActivity {
 
-    Spinner days;
-    String selectedItem;
+    private Spinner days;
+    private String selectedItem;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.admin_activity_set_end_of_week);
-        days = (Spinner) findViewById(R.id.SelectDayDropDown301);
 
+        days = findViewById(R.id.SelectDayDropDown301);
     }
 
     public void onClickReg13(View v) {
         selectedItem = days.getSelectedItem().toString();
+
         DatabaseReference ref = FirebaseDatabase.getInstance().getReference();
         ref.child("EndOfWeek").setValue(selectedItem);
-        Toast.makeText(EndOfWeekActivitiy.this, "Set End of Child Successful.", Toast.LENGTH_SHORT).show();
 
+        Toast.makeText(this, "End of week set successfully.", Toast.LENGTH_SHORT).show();
     }
 }

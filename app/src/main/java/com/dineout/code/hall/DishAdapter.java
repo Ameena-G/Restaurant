@@ -4,12 +4,15 @@ import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import android.view.Gravity; // Added
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.Button; // Added
+import android.widget.LinearLayout; // Added
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -35,8 +38,9 @@ import com.google.firebase.database.MutableData;
 import com.google.firebase.database.Transaction;
 import com.google.firebase.database.ValueEventListener;
 
-import com.hrules.horizontalnumberpicker.HorizontalNumberPicker;
-import com.hrules.horizontalnumberpicker.HorizontalNumberPickerListener;
+// REMOVED problematic imports:
+// import com.hrules.horizontalnumberpicker.HorizontalNumberPicker;
+// import com.hrules.horizontalnumberpicker.HorizontalNumberPickerListener;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -85,66 +89,66 @@ public class DishAdapter extends ArrayAdapter<OrderDetails> {
                         public void onClick(DialogInterface dialog, int which) {
                             switch (which) {
                                 case DialogInterface.BUTTON_POSITIVE:
-                                        //CHECK INVENTORY!
-                                        Toast.makeText(getContext(),"PROCESSING RE-ORDER",Toast.LENGTH_SHORT).show();
-                                        FirebaseDatabase.getInstance().getReference("MenuItem").child(dish.getDishname()).addValueEventListener(new ValueEventListener() {
-                                            @Override
-                                            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                                                for (DataSnapshot orderSnapshot: dataSnapshot.getChildren()) {
-                                                    final MenuItem item = orderSnapshot.getValue(MenuItem.class);
-                                                    FirebaseDatabase.getInstance().getReference("Inventory/"+item.getIngredientName()).runTransaction(new Transaction.Handler() {
-                                                        @NonNull
-                                                        @Override
-                                                        public Transaction.Result doTransaction(@NonNull MutableData mutableData) {
-                                                            Item i = mutableData.getValue(Item.class);
-                                                            FireBaseHelper helper = new FireBaseHelper();
-                                                            if(i==null)
-                                                                return Transaction.success(mutableData);
-                                                            if(Integer.valueOf(i.getQuantity()) >= Integer.valueOf(i.getThreshold()) && Integer.valueOf(i.getQuantity())-(count*Integer.valueOf(item.getQuantity()))<=Integer.valueOf(i.getThreshold())) {
-                                                                    Calendar calendar = Calendar.getInstance();
-                                                                    @SuppressLint("SimpleDateFormat")
-                                                                    SimpleDateFormat mdformat = new SimpleDateFormat("HH:mm");
-                                                                    String strDate = mdformat.format(calendar.getTime());
-                                                                    helper.NewNotification(item.getIngredientName(),false,strDate);
-                                                                Toast.makeText(getContext(), "Admin Notified for Low Inventory Count!", Toast.LENGTH_LONG).show();
-                                                            }
-                                                            if(Integer.valueOf(i.getQuantity())-(count*Integer.valueOf(item.getQuantity()))<0) {
-                                                                Toast.makeText(getContext(),"Error: Inventory Out of Stock\nRe-Order Cannot be placed!",Toast.LENGTH_LONG).show();
-                                                                possible = false;
-                                                                return Transaction.success(mutableData);
-                                                            }
-                                                            i.setQuantity(Integer.valueOf(i.getQuantity())-(count*Integer.valueOf(item.getQuantity()))+"");
-                                                            mutableData.setValue(i);
+                                    //CHECK INVENTORY!
+                                    Toast.makeText(getContext(),"PROCESSING RE-ORDER",Toast.LENGTH_SHORT).show();
+                                    FirebaseDatabase.getInstance().getReference("MenuItem").child(dish.getDishname()).addValueEventListener(new ValueEventListener() {
+                                        @Override
+                                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                            for (DataSnapshot orderSnapshot: dataSnapshot.getChildren()) {
+                                                final MenuItem item = orderSnapshot.getValue(MenuItem.class);
+                                                FirebaseDatabase.getInstance().getReference("Inventory/"+item.getIngredientName()).runTransaction(new Transaction.Handler() {
+                                                    @NonNull
+                                                    @Override
+                                                    public Transaction.Result doTransaction(@NonNull MutableData mutableData) {
+                                                        Item i = mutableData.getValue(Item.class);
+                                                        FireBaseHelper helper = new FireBaseHelper();
+                                                        if(i==null)
+                                                            return Transaction.success(mutableData);
+                                                        if(Integer.valueOf(i.getQuantity()) >= Integer.valueOf(i.getThreshold()) && Integer.valueOf(i.getQuantity())-(count*Integer.valueOf(item.getQuantity()))<=Integer.valueOf(i.getThreshold())) {
+                                                            Calendar calendar = Calendar.getInstance();
+                                                            @SuppressLint("SimpleDateFormat")
+                                                            SimpleDateFormat mdformat = new SimpleDateFormat("HH:mm");
+                                                            String strDate = mdformat.format(calendar.getTime());
+                                                            helper.NewNotification(item.getIngredientName(),false,strDate);
+                                                            Toast.makeText(getContext(), "Admin Notified for Low Inventory Count!", Toast.LENGTH_LONG).show();
+                                                        }
+                                                        if(Integer.valueOf(i.getQuantity())-(count*Integer.valueOf(item.getQuantity()))<0) {
+                                                            Toast.makeText(getContext(),"Error: Inventory Out of Stock\nRe-Order Cannot be placed!",Toast.LENGTH_LONG).show();
+                                                            possible = false;
                                                             return Transaction.success(mutableData);
                                                         }
+                                                        i.setQuantity(Integer.valueOf(i.getQuantity())-(count*Integer.valueOf(item.getQuantity()))+"");
+                                                        mutableData.setValue(i);
+                                                        return Transaction.success(mutableData);
+                                                    }
 
-                                                        @Override
-                                                        public void onComplete(@Nullable DatabaseError databaseError, boolean b, @Nullable DataSnapshot dataSnapshot) {
-                                                            FireBaseHelper helper = new FireBaseHelper();
-                                                            //LOOK HERE!!!
-                                                            //LOAD BALANCING FUNCTION TO BE CALLED HERE - BY DEFAULT, IT ALWAYS GOES TO THE WAITING QUEUE!!
-                                                            if(possible && dishes.size()>0) {
-                                                                if (dish.getServings() - count == 0)
-                                                                    dishes.remove(position);
-                                                                else
-                                                                    dishes.get(position).setServings(dishes.get(position).getServings() - count);
-                                                                if(!done)
-                                                                    helper.done = false;
-                                                                if(!clicked) {
-                                                                    helper.UpdateOrderDetails(dish.getOrderid(), dish.getDishname(), dish.getEstimatedtime(), dish.getServings(), count);
-                                                                    Toast.makeText(getContext(), "Re-Order Confirmed!", Toast.LENGTH_SHORT).show();
-                                                                    clicked = true;
-                                                                }}
-                                                        }
-                                                    });
-                                               }
+                                                    @Override
+                                                    public void onComplete(@Nullable DatabaseError databaseError, boolean b, @Nullable DataSnapshot dataSnapshot) {
+                                                        FireBaseHelper helper = new FireBaseHelper();
+                                                        //LOOK HERE!!!
+                                                        //LOAD BALANCING FUNCTION TO BE CALLED HERE - BY DEFAULT, IT ALWAYS GOES TO THE WAITING QUEUE!!
+                                                        if(possible && dishes.size()>0) {
+                                                            if (dish.getServings() - count == 0)
+                                                                dishes.remove(position);
+                                                            else
+                                                                dishes.get(position).setServings(dishes.get(position).getServings() - count);
+                                                            if(!done)
+                                                                helper.done = false;
+                                                            if(!clicked) {
+                                                                helper.UpdateOrderDetails(dish.getOrderid(), dish.getDishname(), dish.getEstimatedtime(), dish.getServings(), count);
+                                                                Toast.makeText(getContext(), "Re-Order Confirmed!", Toast.LENGTH_SHORT).show();
+                                                                clicked = true;
+                                                            }}
+                                                    }
+                                                });
                                             }
+                                        }
 
-                                            @Override
-                                            public void onCancelled(@NonNull DatabaseError databaseError) {
-                                                Toast.makeText(getContext(),"Something went wrong! Try again!",Toast.LENGTH_LONG).show();
-                                            }
-                                        });
+                                        @Override
+                                        public void onCancelled(@NonNull DatabaseError databaseError) {
+                                            Toast.makeText(getContext(),"Something went wrong! Try again!",Toast.LENGTH_LONG).show();
+                                        }
+                                    });
                                     break;
                                 case DialogInterface.BUTTON_NEGATIVE:
                                     break;
@@ -152,25 +156,77 @@ public class DishAdapter extends ArrayAdapter<OrderDetails> {
                         }
                     };
 
-                    RelativeLayout linearLayout = new RelativeLayout(getContext());
-                    HorizontalNumberPicker numberPicker = new HorizontalNumberPicker(getContext());
-                    numberPicker.setMaxValue(dish.getServings());
-                    numberPicker.setMinValue(1);
-                    numberPicker.setListener(new HorizontalNumberPickerListener() {
+                    // --- Custom Horizontal Number Picker Implementation ---
+                    final int maxServings = dish.getServings();
+                    count = 1; // Reset count for the dialog
+
+                    RelativeLayout containerLayout = new RelativeLayout(getContext());
+                    containerLayout.setPadding(32, 16, 32, 16);
+
+                    // Layout for the buttons and text view
+                    LinearLayout pickerLayout = new LinearLayout(getContext());
+                    pickerLayout.setOrientation(LinearLayout.HORIZONTAL);
+                    pickerLayout.setGravity(Gravity.CENTER);
+
+                    final Button minusButton = new Button(getContext());
+                    minusButton.setText("-");
+                    minusButton.setTextSize(24);
+                    minusButton.setPadding(32, 8, 32, 8);
+                    minusButton.setEnabled(false); // Min value is 1
+
+                    final TextView countTextView = new TextView(getContext());
+                    countTextView.setText(String.valueOf(count));
+                    countTextView.setTextSize(24);
+                    countTextView.setPadding(32, 0, 32, 0);
+
+                    final Button plusButton = new Button(getContext());
+                    plusButton.setText("+");
+                    plusButton.setTextSize(24);
+                    plusButton.setPadding(32, 8, 32, 8);
+                    plusButton.setEnabled(count < maxServings); // Check max value
+
+                    // Set up listeners for the buttons
+                    plusButton.setOnClickListener(new View.OnClickListener() {
                         @Override
-                        public void onHorizontalNumberPickerChanged(HorizontalNumberPicker horizontalNumberPicker, int value) {
-                            count = value;
+                        public void onClick(View v) {
+                            if (count < maxServings) {
+                                count++;
+                                countTextView.setText(String.valueOf(count));
+                                minusButton.setEnabled(true);
+                                if (count == maxServings) {
+                                    plusButton.setEnabled(false);
+                                }
+                            }
                         }
                     });
 
-                    RelativeLayout.LayoutParams numPicerParams = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.WRAP_CONTENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
-                    numPicerParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
+                    minusButton.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            if (count > 1) {
+                                count--;
+                                countTextView.setText(String.valueOf(count));
+                                plusButton.setEnabled(true);
+                                if (count == 1) {
+                                    minusButton.setEnabled(false);
+                                }
+                            }
+                        }
+                    });
 
-                    linearLayout.setLayoutParams(numPicerParams);
-                    linearLayout.addView(numberPicker, numPicerParams);
+                    pickerLayout.addView(minusButton);
+                    pickerLayout.addView(countTextView);
+                    pickerLayout.addView(plusButton);
+
+                    RelativeLayout.LayoutParams pickerParams = new RelativeLayout.LayoutParams(
+                            RelativeLayout.LayoutParams.WRAP_CONTENT,
+                            RelativeLayout.LayoutParams.WRAP_CONTENT);
+                    pickerParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
+                    containerLayout.addView(pickerLayout, pickerParams);
+                    // --- End of Custom Number Picker Implementation ---
 
                     AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-                    builder.setView(linearLayout);
+                    builder.setView(containerLayout); // Use the containerLayout here
                     builder.setMessage("Select Dish Quantity").setPositiveButton("Confirm Re-Order", dialogClickListener)
                             .setNegativeButton("Cancel", dialogClickListener).show();
                 } else {
@@ -182,4 +238,3 @@ public class DishAdapter extends ArrayAdapter<OrderDetails> {
         return view;
     }
 }
-

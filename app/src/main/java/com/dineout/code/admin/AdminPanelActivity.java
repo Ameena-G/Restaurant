@@ -2,14 +2,15 @@ package com.dineout.code.admin;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.v7.app.AppCompatActivity;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
 
 import com.dineout.R;
 import com.google.firebase.database.ChildEventListener;
@@ -26,69 +27,59 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 
-
 /*
 Admin interface
-all junctinoalities corresponding to buttons
+All functionalities corresponding to buttons
 */
 
 public class AdminPanelActivity extends AppCompatActivity {
-    Button notificationButton;
-    DatabaseReference databaseReference; //TABLE LIA
-    FirebaseDatabase firebaseDatabase; //FIREBASE DATABASE KA OBJECT GET KIA
+    private Button notificationButton;
+    private DatabaseReference databaseReference;
+    private FirebaseDatabase firebaseDatabase;
 
-    String date1 = null;
-    Date d1;
-    Date d2;
-    DatabaseReference ref = FirebaseDatabase.getInstance().getReference();
-    String date = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()).format(new Date());
-    SimpleDateFormat format = new SimpleDateFormat("dd-MM-yyyy");
-    static ArrayList<NotificationClass> notf = new ArrayList<NotificationClass>();
-    static ArrayList<Item> itm = new ArrayList<Item>();
-    static ArrayList<String> keys = new ArrayList<String>();
+    private String date1 = null;
+    private Date d1;
+    private Date d2;
+    private final DatabaseReference ref = FirebaseDatabase.getInstance().getReference();
+    private final String date = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()).format(new Date());
+    private final SimpleDateFormat format = new SimpleDateFormat("dd-MM-yyyy");
+
+    static ArrayList<NotificationClass> notf = new ArrayList<>();
+    static ArrayList<Item> itm = new ArrayList<>();
+    static ArrayList<String> keys = new ArrayList<>();
     static Boolean flag = false;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.admin_activity_admin_menu);
 
-        notificationButton = (Button) findViewById(R.id.ViewNotificationsButton301);
+        notificationButton = findViewById(R.id.ViewNotificationsButton301);
         checkdate();
 
-
-        notificationButton.setBackgroundResource((R.drawable.mybutton));
+        notificationButton.setBackgroundResource(R.drawable.mybutton);
         notificationButton.setTextColor(getResources().getColor(R.color.black));
 
-        notificationButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent i = new Intent(getApplicationContext(), Notifications.class);
-                startActivity(i);
-            }
+        notificationButton.setOnClickListener(v -> {
+            Intent i = new Intent(getApplicationContext(), Notifications.class);
+            startActivity(i);
         });
 
-        /*notifications inventry ka item threshold say neechay pe notification ka color change hoga*/
-        firebaseDatabase = FirebaseDatabase.getInstance(); //FIREBASE DATABASE KA OBJECT GET KIA
+        // Firebase database reference
+        firebaseDatabase = FirebaseDatabase.getInstance();
+        databaseReference = firebaseDatabase.getReference("notification");
 
-        databaseReference = firebaseDatabase.getReference("notification"); //TABLE LIA
-
-
+        // Listen for notification changes
         databaseReference.addValueEventListener(new ValueEventListener() {
-            com.dineout.code.admin.NotificationClass notification;
-
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 for (DataSnapshot dsp : dataSnapshot.getChildren()) {
-                    if (dsp != null) {
-                        notification = dsp.getValue(com.dineout.code.admin.NotificationClass.class);
-                        if (notification != null && notification.getTime()!=null && notification.getItemName()!=null){
-                            if (notification.isRead() == false) {
-                                notificationButton.setText("New Notification");
-                                notificationButton.setBackgroundColor(getResources().getColor(R.color.red)); //DON'T CHANGE THE COLORS HERE LOL
-                                notificationButton.setTextColor(getResources().getColor(R.color.white)); //DON'T CHANGE THE COLORS HERE LOL
-                            }
+                    NotificationClass notification = dsp.getValue(NotificationClass.class);
+                    if (notification != null && notification.getTime() != null && notification.getItemName() != null) {
+                        if (!notification.isRead()) {
+                            notificationButton.setText("New Notification");
+                            notificationButton.setBackgroundColor(getResources().getColor(R.color.red));
+                            notificationButton.setTextColor(getResources().getColor(R.color.white));
                         }
                     }
                 }
@@ -99,93 +90,45 @@ public class AdminPanelActivity extends AppCompatActivity {
                 Log.d("Database Error: ", databaseError.toString());
             }
         });
-
-
     }
 
-    //Add inventory item
+    // Navigation methods
+    public void onClickReg(View v) { startActivity(new Intent(this, AddItem.class)); }
+    public void onClickReg1(View v) { startActivity(new Intent(this, IngredientsList.class)); }
+    public void onClickReg2(View v) { startActivity(new Intent(this, AddEmployeeActivity.class)); }
+    public void onClickReg3(View v) { startActivity(new Intent(this, AddTabletActivity.class)); }
+    public void onClickReg4(View v) { startActivity(new Intent(this, AddTableActivity.class)); }
+    public void onClickReg5(View v) { startActivity(new Intent(this, AddMenuItemActivity.class)); }
+    public void onClickReg6(View v) { startActivity(new Intent(this, EndOfWeekActivitiy.class)); }
+    public void onClickReg7(View v) { startActivity(new Intent(this, Notifications.class)); }
 
-    public void onClickReg(View v) {
-        Intent i = new Intent(this, AddItem.class);
-        startActivity(i);
-    }
-
-    //ingredients/raw items threshold say kam row red
-    public void onClickReg1(View v) {
-        Intent i = new Intent(this, IngredientsList.class);
-        startActivity(i);
-    }
-
-    //add new emloyee activity
-    public void onClickReg2(View v) {
-        Intent i = new Intent(this, AddEmployeeActivity.class);
-        startActivity(i);
-    }
-
-    //add tablet activity
-    public void onClickReg3(View v) {
-        Intent i = new Intent(this, AddTabletActivity.class);
-        startActivity(i);
-    }
-
-    //add table activityy
-    public void onClickReg4(View v) {
-        Intent i = new Intent(this, AddTableActivity.class);
-        startActivity(i);
-    }
-
-
-    //making a dish and setting ingedients and theri quantity
-    public void onClickReg5(View v) {
-        Intent i = new Intent(this, AddMenuItemActivity.class);
-        startActivity(i);
-    }
-
-    //end of week activty sets
-    public void onClickReg6(View v) {
-        Intent i = new Intent(this, EndOfWeekActivitiy.class);
-        startActivity(i);
-    }
-
-    //low threshold notifications of ingredients/inventory items
-    public void onClickReg7(View v) {
-        Intent i = new Intent(this, Notifications.class);
-        startActivity(i);
-    }
-
-    /*notification button state restore. also checking new notificatinos*/
     @Override
     protected void onResume() {
-        notificationButton.setBackgroundResource((R.drawable.mybutton));
+        super.onResume();
+        notificationButton.setBackgroundResource(R.drawable.mybutton);
         notificationButton.setTextColor(getResources().getColor(R.color.black));
         notificationButton.setText("Notifications");
+
         databaseReference.addValueEventListener(new ValueEventListener() {
-            com.dineout.code.admin.NotificationClass notification;
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 for (DataSnapshot dsp : dataSnapshot.getChildren()) {
-                    if (dsp != null) {
-                        notification = dsp.getValue(com.dineout.code.admin.NotificationClass.class);
-                        if (notification != null && notification.getTime()!=null && notification.getItemName()!=null) {
-                            if (notification.isRead() == false) {
-                                notificationButton.setText("New Notification");
-                                notificationButton.setBackgroundColor(getResources().getColor(R.color.red)); //DON'T CHANGE THE COLORS HERE LOL
-                                notificationButton.setTextColor(getResources().getColor(R.color.white)); //DON'T CHANGE THE COLORS HERE LOL
-                            }
+                    NotificationClass notification = dsp.getValue(NotificationClass.class);
+                    if (notification != null && notification.getTime() != null && notification.getItemName() != null) {
+                        if (!notification.isRead()) {
+                            notificationButton.setText("New Notification");
+                            notificationButton.setBackgroundColor(getResources().getColor(R.color.red));
+                            notificationButton.setTextColor(getResources().getColor(R.color.white));
                         }
                     }
                 }
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
+            public void onCancelled(@NonNull DatabaseError databaseError) {}
         });
-        super.onResume();
     }
 
-    //options menu for logout
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
@@ -193,31 +136,25 @@ public class AdminPanelActivity extends AppCompatActivity {
         return true;
     }
 
-    //
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == R.id.logout) {
-
-            Intent intent;
-            intent = new Intent(this, LoginActivity.class);
+            Intent intent = new Intent(this, LoginActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
             startActivity(intent);
-
             return true;
-
-        } else {
-            return super.onOptionsItemSelected(item);
         }
+        return super.onOptionsItemSelected(item);
     }
 
+    // Date checking logic
     public void checkdate() {
-        firebaseDatabase = FirebaseDatabase.getInstance(); //FIREBASE DATABASE KA OBJECT GET KIA
-
-        databaseReference = firebaseDatabase.getReference("Date"); //TABLE LIA
+        firebaseDatabase = FirebaseDatabase.getInstance();
+        databaseReference = firebaseDatabase.getReference("Date");
 
         databaseReference.addChildEventListener(new ChildEventListener() {
-            public void onChildAdded(DataSnapshot dataSnapshot, String previousKey) {
-
+            @Override
+            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, String previousKey) {
                 date1 = dataSnapshot.getValue(String.class);
                 DateFormat f = new SimpleDateFormat("dd-MM-yyyy");
                 d1 = f.parse(date, new ParsePosition(0));
@@ -228,102 +165,69 @@ public class AdminPanelActivity extends AppCompatActivity {
                     ref1.child("Date").child("date").setValue(date);
                     checkdb();
                 }
-
-
             }
 
-            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
-            }
-
-            public void onChildRemoved(DataSnapshot dataSnapshot) {
-            }
-
-            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
+            @Override public void onChildChanged(@NonNull DataSnapshot dataSnapshot, String s) {}
+            @Override public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {}
+            @Override public void onChildMoved(@NonNull DataSnapshot dataSnapshot, String s) {}
+            @Override public void onCancelled(@NonNull DatabaseError databaseError) {}
         });
     }
 
+    // Inventory & notification checks
     public void checkdb() {
-        firebaseDatabase = FirebaseDatabase.getInstance(); //FIREBASE DATABASE KA OBJECT GET KIA
-
-        databaseReference = firebaseDatabase.getReference("notification"); //TABLE LIA
+        firebaseDatabase = FirebaseDatabase.getInstance();
+        databaseReference = firebaseDatabase.getReference("notification");
 
         databaseReference.addChildEventListener(new ChildEventListener() {
-            public void onChildAdded(DataSnapshot dataSnapshot, String previousKey) {
+            @Override
+            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, String previousKey) {
                 keys.add(dataSnapshot.getKey());
                 notf.add(dataSnapshot.getValue(NotificationClass.class));
-
             }
 
-            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
-            }
-
-            public void onChildRemoved(DataSnapshot dataSnapshot) {
-            }
-
-            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
-
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-
+            @Override public void onChildChanged(@NonNull DataSnapshot dataSnapshot, String s) {}
+            @Override public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {}
+            @Override public void onChildMoved(@NonNull DataSnapshot dataSnapshot, String s) {}
+            @Override public void onCancelled(@NonNull DatabaseError databaseError) {}
         });
 
-        firebaseDatabase = FirebaseDatabase.getInstance(); //FIREBASE DATABASE KA OBJECT GET KIA
-
-        databaseReference = firebaseDatabase.getReference("Inventory"); //TABLE LIA
+        databaseReference = firebaseDatabase.getReference("Inventory");
         databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
-            public void onDataChange(DataSnapshot dataSnapshot) {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 removenotif();
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
+            public void onCancelled(@NonNull DatabaseError databaseError) {}
         });
 
         databaseReference.addChildEventListener(new ChildEventListener() {
-            public void onChildAdded(DataSnapshot dataSnapshot, String previousKey) {
-
-                itm.add(dataSnapshot.getValue(Item.class));
-
-            }
-
-            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
-
-
-            }
-
-            public void onChildRemoved(DataSnapshot dataSnapshot) {
-            }
-
-            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
-            }
-
             @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
+            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, String previousKey) {
+                itm.add(dataSnapshot.getValue(Item.class));
             }
+
+            @Override public void onChildChanged(@NonNull DataSnapshot dataSnapshot, String s) {}
+            @Override public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {}
+            @Override public void onChildMoved(@NonNull DataSnapshot dataSnapshot, String s) {}
+            @Override public void onCancelled(@NonNull DatabaseError databaseError) {}
         });
     }
 
+    // Remove resolved notifications
     public void removenotif() {
         for (int i = 0; i < notf.size(); i++) {
             for (int j = 0; j < itm.size(); j++) {
                 if (notf.get(i).getItemName().equals(itm.get(j).getName())) {
-                    if (Integer.parseInt(itm.get(j).getQuantity()) > Integer.parseInt(itm.get(j).getThreshold()))
-                        FirebaseDatabase.getInstance().getReference().child("notification").child(keys.get(i)).removeValue();
+                    if (Integer.parseInt(itm.get(j).getQuantity()) > Integer.parseInt(itm.get(j).getThreshold())) {
+                        FirebaseDatabase.getInstance().getReference()
+                                .child("notification")
+                                .child(keys.get(i))
+                                .removeValue();
+                    }
                 }
-
             }
         }
     }
